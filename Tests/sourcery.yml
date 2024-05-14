@@ -1,0 +1,8 @@
+configurations:
+  - sources:
+      - ../Sources/SourceryNewtype
+      - ../Support
+      - SourceryNewtypeTests
+    templates:
+      - ../Templates/Newtype.stencil
+    output: SourceryNewtypeTests/Generated

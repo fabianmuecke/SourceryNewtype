@@ -1,0 +1,165 @@
+{% macro renderRawRepresentable type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.RawRepresentable and not type.based.RawRepresentable %}
+extension {{type.globalName}}: RawRepresentable {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderSendable type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.Sendable and not type.based.Sendable %}
+extension {{type.globalName}}: @unchecked Sendable {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderIdentifiable type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.Identifiable and not type.based.Identifiable %}
+extension {{type.globalName}}: Identifiable {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderEquatable type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.Equatable and not type.based.Equatable %}
+extension {{type.globalName}}: Equatable {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderHashable type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.Hashable and not type.based.Hashable %}
+extension {{type.globalName}}: Hashable {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderComparable type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.Comparable and not type.based.Comparable %}
+extension {{type.globalName}}: Comparable {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderDecodable type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.Decodable and not type.based.Decodable and not type.based.Codable %}
+extension {{type.globalName}}: Decodable {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderEncodable type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.Encodable and not type.based.Encodable and not type.based.Codable %}
+extension {{type.globalName}}: Encodable {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderExpressibleByStringLiteral type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.ExpressibleByStringLiteral and not type.based.ExpressibleByStringLiteral %}
+extension {{type.globalName}}: ExpressibleByStringLiteral {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderExpressibleByFloatLiteral type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.ExpressibleByFloatLiteral and not type.based.ExpressibleByFloatLiteral %}
+extension {{type.globalName}}: ExpressibleByFloatLiteral {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderExpressibleByIntegerLiteral type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.ExpressibleByIntegerLiteral and not type.based.ExpressibleByIntegerLiteral %}
+extension {{type.globalName}}: ExpressibleByIntegerLiteral {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderExpressibleByBooleanLiteral type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.ExpressibleByBooleanLiteral and not type.based.ExpressibleByBooleanLiteral %}
+extension {{type.globalName}}: ExpressibleByBooleanLiteral {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderExpressibleByStringInterpolation type variableType %}
+{% typed type as Type %}
+{% typed variableType as Type %}
+{% if variableType.based.ExpressibleByStringInterpolation and not type.based.ExpressibleByStringInterpolation %}
+extension {{type.globalName}}: ExpressibleByStringInterpolation {}
+{% endif %}
+{% endmacro %}
+
+{% macro renderConformances newtype variableTypeName %}
+{% call renderRawRepresentable newtype type[variableTypeName] -%}
+{% call renderSendable newtype type[variableTypeName] -%}
+{% call renderIdentifiable newtype type[variableTypeName] -%}
+{% call renderEquatable newtype type[variableTypeName] -%}
+{% call renderHashable newtype type[variableTypeName] -%}
+{% call renderComparable newtype type[variableTypeName] -%}
+{% call renderDecodable newtype type[variableTypeName] -%}
+{% call renderEncodable newtype type[variableTypeName] -%}
+{% call renderExpressibleByStringLiteral newtype type[variableTypeName] -%}
+{% call renderExpressibleByFloatLiteral newtype type[variableTypeName] -%}
+{% call renderExpressibleByIntegerLiteral newtype type[variableTypeName] -%}
+{% call renderExpressibleByBooleanLiteral newtype type[variableTypeName] -%}
+{% call renderExpressibleByStringInterpolation newtype type[variableTypeName] -%}
+{% endmacro %}
+
+{% for enum in types.enums where enum.based.Newtype %}
+// sourcery:file:{{enum.name|split:"."|join:"_"}}.Newtype.swift
+// swiftlint:disable all
+// MARK: - {{enum.name}} imports
+{% for import in enum.imports|sorted:"description" %}
+import {{import.description}}
+{% endfor %}
+
+{% set variableTypeName %}{{enum.cases[0].associatedValues[0].typeName.name }}{% endset %}
+{{enum.accessLevel}} extension {{enum.globalName}} { 
+    var value: {{variableTypeName}} {
+        switch self {
+        case let .{{enum.cases[0].name}}(value): value
+        }
+    }
+    
+    init(_ value: {{variableTypeName}}) {
+        self = .{{enum.cases[0].name}}(value)
+    }
+}
+{% call renderConformances enum variableTypeName %}
+
+// swiftlint:enable all
+// sourcery:end
+{% endfor %}
+
+{% for struct in types.structs where struct.based.Newtype %}
+// sourcery:file:{{struct.name|split:"."|join:"_"}}.Newtype.swift
+// swiftlint:disable all
+// MARK: - {{struct.name}} imports
+{% for import in struct.imports|sorted:"description" %}
+import {{import.description}}
+{% endfor %}
+
+{% set variableTypeName %}{{struct.variables[0].typeName.name }}{% endset %}
+extension {{struct.globalName}} {
+    {{struct.accessLevel}} init(_ value: Value) {
+        self.value = value
+    }
+}
+{% call renderConformances struct variableTypeName %}
+
+// swiftlint:enable all
+// sourcery:end
+{% endfor %}
